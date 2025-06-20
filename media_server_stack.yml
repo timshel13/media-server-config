@@ -1,0 +1,183 @@
+services:
+
+  jellyfin:
+    image: jellyfin/jellyfin
+    container_name: jellyfin
+    ports:
+      - "8096:8096"
+    volumes:
+      - /mnt/media1tb/movies:/media/movies
+      - /mnt/media1tb/shows:/media/shows
+      - /mnt/media1tb/music:/media/music
+      - /mnt/media1tb/appdata/jellyfin:/config
+    networks:
+      - media_net
+    restart: unless-stopped
+
+  jellyseer:
+    image: fallenbagel/jellyseerr
+    container_name: jellyseer
+    ports:
+      - "5055:5055"
+    volumes:
+      - /mnt/media1tb/appdata/jellyseer:/app/config
+    environment:
+      LOG_LEVEL: info
+    networks:
+      - media_net
+    restart: unless-stopped
+
+  qbittorrent:
+    image: linuxserver/qbittorrent
+    container_name: qbittorrent
+    network_mode: "service:gluetun"
+    environment:
+      PUID: 1000
+      PGID: 1000
+      WEBUI_PORT: 8080
+    volumes:
+      - /mnt/media1tb/qbittorrent:/config
+      - /mnt/media1tb/downloads:/downloads
+    restart: unless-stopped
+
+  jackett:
+    image: linuxserver/jackett
+    container_name: jackett
+    ports:
+      - "9117:9117"
+    volumes:
+      - /mnt/media1tb/appdata/jackett:/config
+    networks:
+      - media_net
+    restart: unless-stopped
+
+  prowlarr:
+    image: linuxserver/prowlarr
+    container_name: prowlarr
+    environment:
+      PUID: 1000
+      PGID: 1000
+    volumes:
+      - /mnt/media1tb/appdata/prowlarr:/config
+    ports:
+      - "9696:9696"
+    networks:
+      - media_net
+    restart: unless-stopped
+
+  radarr:
+    image: lscr.io/linuxserver/radarr
+    container_name: radarr
+    ports:
+      - "7878:7878"
+    volumes:
+      - /mnt/media1tb/appdata/radarr:/config
+      - /mnt/media1tb/movies:/movies
+      - /mnt/media1tb/movies:/downloads
+    networks:
+      - media_net
+    restart: unless-stopped
+
+  sonarr:
+    image: lscr.io/linuxserver/sonarr
+    container_name: sonarr
+    ports:
+      - "8989:8989"
+    volumes:
+      - /mnt/media1tb/appdata/sonarr:/config
+      - /mnt/media1tb/shows:/tv
+      - /mnt/media1tb/shows:/downloads
+    networks:
+      - media_net
+    restart: unless-stopped
+
+  lidarr:
+    image: lscr.io/linuxserver/lidarr
+    container_name: lidarr
+    ports:
+      - "8686:8686"
+    volumes:
+      - /mnt/media1tb/appdata/lidarr:/config
+      - /mnt/media1tb/music:/music
+      - /mnt/media1tb/music:/downloads
+    networks:
+      - media_net
+    restart: unless-stopped
+
+  readarr:
+    image: ghcr.io/linuxserver/readarr:develop
+    container_name: readarr
+    ports:
+      - "8787:8787"
+    volumes:
+      - /mnt/media1tb/appdata/readarr:/config
+      - /mnt/media1tb/books:/books
+      - /mnt/media1tb/books:/downloads
+    networks:
+      - media_net
+    restart: unless-stopped
+
+  adguard:
+    image: adguard/adguardhome
+    container_name: adguard
+    ports:
+      - "3000:3000"
+      - "5353:53/tcp"
+      - "5353:53/udp"
+    volumes:
+      - /mnt/media1tb/appdata/adguard:/opt/adguardhome/conf
+    networks:
+      - media_net
+    restart: unless-stopped
+
+  traefik:
+    image: traefik:v2.11
+    container_name: traefik
+    command:
+      - "--api.insecure=true"
+      - "--providers.docker=true"
+      - "--entrypoints.web.address=:80"
+    ports:
+      - "80:80"
+      - "8081:8080"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - media_net
+    restart: unless-stopped
+
+  gluetun:
+    image: qmcgaw/gluetun
+    container_name: gluetun
+    cap_add:
+      - NET_ADMIN
+    devices:
+      - /dev/net/tun
+    environment:
+      VPN_SERVICE_PROVIDER: protonvpn
+      OPENVPN_USER: "tA9PLvzsjPWhpv3F"
+      OPENVPN_PASSWORD: "PauOdJOPOLgcUmmf9JySiQtIXFtRXM1K"
+      SERVER_COUNTRIES: United States
+    volumes:
+      - /mnt/media1tb/gluetun:/gluetun
+    ports:
+      - "8080:8080"
+    networks:
+      - media_net
+    restart: unless-stopped
+
+  ntfy:
+    image: binwiederhier/ntfy
+    container_name: ntfy
+    command: serve
+    ports:
+      - "8181:80"
+    volumes:
+      - /mnt/media1tb/ntfy:/var/cache/ntfy
+    networks:
+      - media_net
+    restart: unless-stopped
+
+networks:
+  media_net:
+    external: true
