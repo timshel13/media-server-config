@@ -1,1 +1,11 @@
 backup-archives/
+# Ignore backup archives and transient Docker files
+backup-archives/
+*.tar.gz
+*.log
+*.db*
+*.pid
+*.shm
+*.wal
+.DS_Store
+__pycache__/
